@@ -11,6 +11,8 @@ import (
 	"github.com/m-lab/ndt-server/ndt7/spec"
 )
 
+var FileStored = ""
+
 // File is the file where we save measurements.
 type File struct {
 	// Writer is the gzip writer instance
@@ -35,6 +37,8 @@ func newFile(datadir, what, uuid string) (*File, error) {
 	name := dir + "/ndt7-" + what + "-" + timestamp.Format("20060102T150405.000000000Z") + "." + uuid + ".json.gz"
 	// My assumption here is that we have nanosecond precision and hence it's
 	// unlikely to have conflicts. If I'm wrong, O_EXCL will let us know.
+	FileStored = name
+
 	fp, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
 		return nil, err

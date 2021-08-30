@@ -1,14 +1,21 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -22,10 +29,15 @@ import (
 	"github.com/m-lab/ndt-server/ndt5/plain"
 	"github.com/m-lab/ndt-server/ndt7/handler"
 	"github.com/m-lab/ndt-server/ndt7/listener"
+	"github.com/m-lab/ndt-server/ndt7/results"
 	"github.com/m-lab/ndt-server/ndt7/spec"
 	"github.com/m-lab/ndt-server/platformx"
 	"github.com/m-lab/ndt-server/version"
 
+	//"github.com/lucas-clemente/quic-go"
+	"github.com/lucas-clemente/quic-go/http3"
+	//logquic "github.com/lucas-clemente/quic-go/logging"
+	//"github.com/lucas-clemente/quic-go/qlog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -125,6 +137,138 @@ func httpServer(addr string, handler http.Handler) *http.Server {
 	}
 }
 
+/*********************** My Functions ********************************/
+
+// Size is needed by the /demo/upload handler to determine the size of the uploaded file
+type Size interface {
+	Size() int64
+}
+
+// Generate data Byte from interger(lengh)
+func generatePRData(l int) []byte {
+	res := make([]byte, l)
+	seed := uint64(1)
+	for i := 0; i < l; i++ {
+		seed = seed * 48271 % 2147483647
+		res[i] = byte(seed)
+	}
+	return res
+}
+
+type bufferedWriteCloser struct {
+	*bufio.Writer
+	io.Closer
+}
+
+// NewBufferedWriteCloser creates an io.WriteCloser from a bufio.Writer and an io.Closer
+func NewBufferedWriteCloser(writer *bufio.Writer, closer io.Closer) io.WriteCloser {
+	return &bufferedWriteCloser{
+		Writer: writer,
+		Closer: closer,
+	}
+}
+
+func (h bufferedWriteCloser) Close() error {
+	if err := h.Writer.Flush(); err != nil {
+		return err
+	}
+	return h.Closer.Close()
+}
+
+func downloadTest(rw http.ResponseWriter, req *http.Request) {
+	var mutex sync.Mutex
+	var StartTime = time.Now().UTC()
+	var spedDown int64
+	fmt.Println("Download Test...")
+	fmt.Println("StartTime: ", StartTime.String())
+	start := StartTime
+
+	// Guarantee results are written even if function panics.
+	defer func() {
+		var EndTime = time.Now().UTC()
+		fmt.Println("EndTime: ", EndTime.String())
+		mutex.Lock()
+		testFile, logerr := os.OpenFile("test.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
+		if logerr != nil {
+			return
+		}
+		defer testFile.Close()
+		testFile.WriteString("Download Test...\n")
+		testFile.WriteString("StartTime: " + StartTime.String() + "\n")
+		testFile.WriteString("Speed: " + strconv.FormatInt(spedDown, 10) + "\n")
+		testFile.WriteString("EndTime: " + EndTime.String() + "\n\n")
+		mutex.Unlock()
+	}()
+
+	// Run measurement.
+	var msgSize = 1 << 13
+	const every time.Duration = 250 * time.Millisecond
+
+	msg := generatePRData(int(msgSize))
+
+	var total int64
+	for {
+		//Sending data
+		if time.Since(StartTime) >= 13*time.Second {
+			return
+		}
+		rw.Write(msg)
+		total += int64(msgSize)
+		if time.Now().UTC().Sub(start) >= every {
+			bitSentTillNow := total * 8 // bytes * 8
+			spedDown = ((bitSentTillNow / int64(time.Since(StartTime).Milliseconds())) * 1000) / 1000000
+			fmt.Println("Speed : ", spedDown, " Mbits/s")
+			start = time.Now().UTC()
+		}
+		//fmt.Println("Message size:", msgSize)
+		if int64(msgSize) >= total/16 {
+			continue // message size still too big compared to sent data
+		}
+
+		if int64(msgSize) >= 1<<24 {
+			continue // message size still too big compared
+		}
+		msgSize *= 2
+		msg = generatePRData(int(msgSize))
+	}
+
+}
+
+func uploadTest(rw http.ResponseWriter, req *http.Request) {
+	//Variables
+	var mutex sync.Mutex
+	var spedUp int64
+	var buf []byte
+	var err error
+
+	fmt.Println("Upload Test")
+	var StartTime = time.Now().UTC()
+	buf, err = ioutil.ReadAll(req.Body)
+	var EndTime = time.Since(StartTime)
+	if err != nil {
+		log.Fatal("request", err)
+	}
+
+	// Speed Calculation
+	spedUp = ((int64(len(buf)*8) / int64(time.Since(StartTime).Milliseconds())) * 1000) / 1000000
+	fmt.Println("Speed: ", spedUp, " Mbits/s")
+	fmt.Fprintf(rw, "Success")
+
+	//Writing results
+	mutex.Lock()
+	testFile, logerr := os.OpenFile("test.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
+	if logerr != nil {
+		return
+	}
+	defer testFile.Close()
+	testFile.WriteString("Upload Test...\n")
+	testFile.WriteString("StartTime: " + StartTime.String() + "\n")
+	testFile.WriteString("Speed: " + strconv.FormatInt(spedUp, 10) + "\n")
+	testFile.WriteString("EndTime: " + EndTime.String() + "\n\n")
+	mutex.Unlock()
+}
+
+/************************  End Functions ******************************/
 func main() {
 	flag.Parse()
 	rtx.Must(flagx.ArgsFromEnv(flag.CommandLine), "Could not parse env args")
@@ -178,6 +322,9 @@ func main() {
 
 	// The ndt7 listener serving up NDT7 tests, likely on standard ports.
 	ndt7Mux := http.NewServeMux()
+	ndt7Mux.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, results.FileStored)
+	})
 	ndt7Mux.Handle("/", http.FileServer(http.Dir(*htmlDir)))
 	ndt7Handler := &handler.Handler{
 		DataDir:      *dataDir,
@@ -221,6 +368,111 @@ func main() {
 	} else {
 		log.Printf("Cert=%q and Key=%q means no TLS services will be started.\n", *certFile, *keyFile)
 	}
+
+	/****************************************** QUIC Setup  *******************************************/
+	// QUIC Handler
+	ndt7MuxQuic := http.NewServeMux()
+	ndt7MuxQuic.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "Welcome on Quic Api") })
+	ndt7MuxQuic.HandleFunc("/download", downloadTest)
+	ndt7MuxQuic.HandleFunc("/upload", uploadTest)
+	ndt7MuxQuic.HandleFunc("/demo/upload", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			start := time.Now()
+			err := r.ParseMultipartForm(1 << 30) // 4 GB
+			if err == nil {
+				var file multipart.File
+				var hand *multipart.FileHeader
+				file, hand, err = r.FormFile("uploadfile")
+				if err == nil {
+					//defer file.Close()
+					//var size int64
+					if sizeInterface, ok := file.(Size); ok {
+						_ = sizeInterface.Size() // _ == size
+						//b := make([]byte, size)
+						//start := time.Now()
+						//i, _ := file.Read(b)
+						//fmt.Println(time.Since(start))
+						//fmt.Println("Size of file: ", i, " bytes")
+
+						logFile, logerr := os.OpenFile("log.file", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
+						f, err := os.OpenFile("./html/quic/data/"+hand.Filename, os.O_WRONLY|os.O_CREATE, 0666)
+						if err != nil || logerr != nil {
+							fmt.Println(err)
+							return
+						}
+						defer logFile.Close()
+						defer f.Close()
+						// Calling Copy method with its parameters
+						bytes, erro := io.Copy(f, file)
+						// If error is not nil then panics
+						if erro != nil {
+							panic(erro)
+						}
+
+						// Prints output
+						fmt.Printf("The number of bytes are: %d\n", bytes)
+						fmt.Println(time.Since(start))
+						logFile.WriteString("Nom du fichier: " + hand.Filename + "\n")
+						logFile.WriteString("Taille du fichier: " + strconv.FormatInt(int64(bytes), 10) + " bytes\n")
+						logFile.WriteString("Temps d'envoie: " + time.Since(start).String() + "\n\n")
+
+						//file.Read(b)
+						//md5 := md5.Sum(b)
+						//fmt.Fprintf(w, "File Received---md5:%x---Header:%v", md5, hand.Header)
+						fmt.Fprintf(w, "File Received---%v", hand.Header)
+						return
+					}
+					err = errors.New("couldn't get uploaded file size")
+				}
+			}
+			fmt.Printf("Error receiving upload: %#v", err)
+		}
+		io.WriteString(w, `<html><body><form action="/demo/upload" method="post" enctype="multipart/form-data">
+				<input type="file" name="uploadfile"><br>
+				<input type="submit">
+			</form></body></html>`)
+	})
+
+	// Create file server handler
+	direc, _ := os.Getwd()
+	fs := http.FileServer(http.Dir(direc + "/html/quic/data"))
+	ndt7MuxQuic.Handle("/data/", http.StripPrefix("/data", fs))
+	fmt.Println("htmlDir:", *htmlDir)
+	ndt7MuxQuic.Handle("/", http.FileServer(http.Dir(*htmlDir+"/quic")))
+
+	// QUIC Server
+	fmt.Println("About to listening on QUIC :4448")
+	go log.Fatal(http3.ListenAndServe(":4448", *certFile, *keyFile, ndt7MuxQuic))
+	/*
+		// QUIC COnfig setup
+		fmt.Println("QuicConfig setup...")
+		quicConf := &quic.Config{}
+
+		// Qlog setup
+		quicConf.Tracer = qlog.NewTracer(func(_ logquic.Perspective, connID []byte) io.WriteCloser {
+			fmt.Println("Setting qlogs...")
+			fmt.Println(connID)
+			filename := fmt.Sprintf("server_%s.qlog", time.Now().String())
+			f, err := os.Create(filename)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("Creating qlog file %s.\n", filename)
+			return NewBufferedWriteCloser(bufio.NewWriter(f), f)
+		})
+
+		// QUIC Server setup
+		fmt.Println("Quic Server setup...")
+		server := http3.Server{
+			Server:     &http.Server{Handler: ndt7MuxQuic, Addr: ":4448"},
+			QuicConfig: quicConf,
+		}
+
+		// Start listening
+		fmt.Println("About to listening on QUIC :4448")
+		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))*/
+
+	/********************************************************************************************/
 
 	// Serve until the context is canceled.
 	<-ctx.Done()

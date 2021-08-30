@@ -20,13 +20,22 @@ install -d certs datadir
 ```
 
 To run the server locally, generate local self signed certificates (`key.pem`
-and `cert.pem`) using bash and OpenSSL
+and `cert.pem`) using bash and OpenSSL. 
 
 ```bash
 ./gen_local_test_certs.bash
 ```
 
-build the docker container for `ndt-server`
+Use your certificates if you already have.
+Copy them into certs files
+
+```bash
+cp <path to certificate and key> certs/
+```
+
+
+Want to build another images for `ndt-server` after modifying files?
+If not, skip
 
 ```bash
 docker build . -t ndt-server
@@ -37,25 +46,33 @@ enable BBR (with which ndt7 works much better)
 ```
 sudo modprobe tcp_bbr
 ```
-
-and run the `ndt-server` binary container
-
+QUIC transfers on high-bandwidth connections can be limited by the size of the UDP receive buffer.
+This buffer holds packets that have been received by the kernel, but not yet read by the application (quic-go in this case).
+It is recommended to increase the maximum buffer size by running:
+(2.5MB)
 ```bash
-docker run --network=bridge                \
-           --publish 443:4443              \
-           --publish 80:8080               \
-           --volume `pwd`/certs:/certs:ro  \
-           --volume `pwd`/datadir:/datadir \
-           --read-only                     \
-           --user `id -u`:`id -g`          \
-           --cap-drop=all                  \
-           ndt-server                      \
-           -cert /certs/cert.pem           \
-           -key /certs/key.pem             \
-           -datadir /datadir               \
-           -ndt7_addr :4443                \
-           -ndt7_addr_cleartext :8080
+sysctl -w net.core.rmem_max=2500000
 ```
+
+Run the `ndt-server` binary container and
+replace <ip> by your public or local ip
+```bash
+docker run  --network=host                       \
+           --volume `pwd`/certs:/certs:ro        \
+           --volume `pwd`/datadir:/datadir       \
+           --volume `pwd`/html:/html             \
+           sidikhub/ndt-server:quic              \
+           -cert /certs/fullchain.pem            \
+           -key /certs/privkey.pem               \
+           -datadir /datadir                     \
+           -ndt7_addr ip:4444         \
+           -ndt7_addr_cleartext ip:4446
+```
+
+### Problem when installing it binding port 80 and 443
+This is the error that will be encountered : `listen tcp :80: bind: permission denied`
+If you are uisng Alpine, which you probably should be, you will need to install the libcap package before you can use the setcap command. You can install and call setcap with one line: `RUN apk add libcap && setcap 'cap_net_bind_service=+ep' /path-to-app-here` .
+
 
 ### Alternate setup & running (Windows & MacOS)
 
@@ -82,8 +99,10 @@ Try accessing these URLs in your browser (for URLs using HTTPS, certs will
 appear invalid to your browser, but everything is safe because this is a test
 deployment, hence you should ignore this warning and continue):
 
-* ndt7: http://localhost/ndt7.html or https://localhost/ndt7.html
-* ndt5+wss: https://localhost:3010/widget.html
-* prometheus: http://localhost:9090/metrics
+* ndt7 on wss  https://ip:4444 (https test)
+* ndt7 on ws   http://ip:4446 (http test)
+* quic  https://ip:4448 (QUIC Test)
+* demo upload file on https://ip:4448/demo/upload
+* see demo data uploaded https://ip:4448/data 
 
-Replace `localhost` with the IP of the server to access them externally.
+Replace `ip` with the `External IP` of the server to access them externally or with `localhost`.

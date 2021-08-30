@@ -28,7 +28,7 @@ const ndt7core = (function() {
       setTimeout(function () {
         worker.terminate()
         finish()
-      }, 13000)
+      }, 15000)
       worker.postMessage({
         href: baseURL,
       })
