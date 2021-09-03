@@ -1,23 +1,420 @@
 <!DOCTYPE html>
+<!DOCTYPE html>
 <html>
-<head><title>An NDT server</title></head>
+<head>
+  <meta charset="utf-8">
+  <script type='text/javascript' src='ndt7-core.js'></script>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>BjNetMonitor</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+  <!-- Vendor CSS Files -->
+  <link href="bootstrap.min.css" rel="stylesheet">
+  <!-- Template Main CSS File -->
+  <link href="stylePage.css" rel="stylesheet">
+
+  <!-- style text -->
+    <style type="text/css">
+
+    .testimonial-item{
+      text-align: left;
+      color: white;
+    }
+    .rounded{
+      background-image: url("images/footer-bg.jpg");
+    }
+    body.noscroll
+    {
+        position: fixed; 
+        overflow-y: scroll;
+        width: 100%;
+        background-color: white;
+    }
+    html{
+      scroll-behavior: smooth;
+    }
+
+
+    /*  preloader */
+
+
+/* Preloader */
+.sid_loader {
+  margin: auto;
+  border: 16px solid #f3f3f3; /* Light grey */
+  border-top: 16px solid #3498db; /* Blue */
+  border-radius: 50%;
+  width: 150px;
+  height: 150px;
+  animation: sid_spin 2s linear infinite;
+}
+
+@keyframes sid_spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+
+
+@keyframes grow {
+  from {transform: scale(0,0); opacity: 0;}
+  to {transform: scale(1,1); opacity: 1;}
+}
+
+@keyframes move {
+  from {transform: translateX(0px)}
+  to {transform: translateX(45px)}
+}
+@keyframes grow {
+  from {transform: scale(0,0); opacity: 0;}
+  to {transform: scale(1,1); opacity: 1;}
+}
+
+@keyframes move {
+  from {transform: translateX(0px)}
+  to {transform: translateX(45px)}
+}
+h1{
+  font-weight: bold;
+  font-size: 50px;
+}
+#chart_down{
+  font-weight: bold;
+  font-size: 50px;
+}
+#chart_up{
+  font-weight: bold;
+  font-size: 50px;
+}
+  </style>
+
+
+
+</head>
 <body>
-<p>This is an NDT server.</p>
 
-<p>You can run an NDT7 test (recommended) by going to <a
-href="ndt7.html">ndt7.html</a></p>
 
-<p>You can run an NDT5 test (legacy, less recommended) by going to <a
-href="embed.html">embed.html</a> or by connecting to the configured ports
-(the defaults are 3001 and 3010).</p>
+    <!-- ======= Hero Section ======= -->
+  <section id="hero">
+    <div class="hero-container" id="upload">
+      <h1 id="download">BJ Monitor SpeedTest</h1>
+      <h2>Test your Network Connexion</h2>
+      <a class="btn-get-started scrollto"  id="start_button">Starting Test</a>
+    </div>
+  </section><!-- End Hero -->
 
-<p> NDT7 is recommended for all new clients. NDT5 is for existing clients
-(including all versions before 5) that have not yet been ported to NDT7. The
-version "NDT6" was skipped entirely as IPv6 has been supported by NDT for
-many years, and the name NDT6 risked confusion with the naming scheme used by
-<code>ping6</code> and the like.</p>
 
-<p>This server is open source, and the code for it may be found at <a
-href="https://github.com/m-lab/ndt-server">github.com/m-lab/ndt-server</a></p>
+  <!-- ======= Header ======= -->
+  <header id="header">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      <h1 class="logo"><a href="index.html">BJNet MONITOR</a></h1>
+      <div class="header-social-links">
+      </div> 
+    </div>
+  </header><!-- End Header -->
+
+    <!-- Main -->
+    <main id="main">
+
+    <!-- ======= Test Section ======= -->
+    <section id="testing" class="about">
+      <div class="container">
+
+        <div class="section-title">
+          <h2 id="test_status">Ready for Test</h2>
+
+        </div>
+        <div class="row content text-center">
+          <div class="col-lg-6">
+                  
+          <h1>Download</h1>
+            <div id="chart_down"><div class="sid_loader"></div></div>
+          </div>
+          <div class="col-lg-6 pt-4 pt-lg-0">
+            <h1>Upload</h1>
+            <div id="chart_up" ><div class="sid_loader"></div></div>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- End About Section -->
+
+
+
+ 
+  
+  
+
+        <!-- ======= Counts Section ======= -->
+    <section id="counts" class="counts">
+      <div class="container">
+        <div class="row counters">
+          <div class="col-lg-6 col-12 text-center rounded border">
+                <div class="testimonial-item">
+                  <h3>Info</h3><br>
+                  <h5 id="isp"></h5>
+                  <h5 id="org"></h5>
+                  <h5 id="ip"></h5>
+                  <h5 id="iptype"></h5>
+                  <h5 id="system"></h5>
+                  <h5 id="browser"></h5>
+                </div>
+          </div>
+
+          <div class="col-lg-6 col-12 text-center rounded border">
+              <div class="testimonial-item">
+                <h3>Location</h3>
+                  <h5 id="continent"></h5>
+                  <h5 id="countryCode"></h5>
+                  <h5 id="country"></h5>
+                  <h5 id="region"></h5>
+                  <h5 id="city"></h5>
+                  <h5 id="latitude"></h5>
+                  <h5 id="longitude"></h5>
+              </div>
+          </div>
+          
+        </div>
+      </div>  
+    </section><!-- End Counts Section -->
+
+
+<!-- ======= Footer ======= -->
+  <footer id="footer">
+
+    <div class="footer-top">
+
+      <div class="container">
+
+        <div class="row  justify-content-center">
+          <div class="col-lg-6">
+            <h3>BJNET MONITOR SPEEDTEST</h3>
+            <p>Get fingerprint of your network</p>
+          </div>
+        </div>
+
+        
+        <!--<div class="header-social-links">
+        <a href="#" class="twitter"><i class="icofont-twitter"></i></a>
+        <a href="#" class="facebook"><i class="icofont-facebook"></i></a>
+        <a href="#" class="instagram"><i class="icofont-instagram"></i></a>
+        <a href="#" class="linkedin"><i class="icofont-linkedin"></i></i></a>
+      </div>
+
+        <div class="row footer-newsletter justify-content-center">
+          <div class="col-lg-6">
+            <form action="" method="post">
+              <input type="email" name="email" placeholder="Enter your Email"><input type="submit" value="Subscribe">
+            </form>
+          </div>
+        </div>-->
+
+
+
+      </div>
+    </div>
+
+    <div class="container footer-bottom clearfix">
+      <div class="copyright">
+        <!-- Footer a gauche -->
+      </div>
+      <div class="credits">
+        <!-- Footer a droite -->
+      </div>
+    </div>
+  </footer><!-- End Footer -->    
+
+  <div id="preloader"></div>
+  <!-- Vendor JS Files -->
+  <script src="jquery.min.js"></script>
+  <script src="jquery.easing.min.js"></script>
+  <script src="jquery.sticky.js"></script>
+  <!-- Template Main JS File -->
+  <script src="main.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+
+  <!-- Script javascript -->
+  <script type="text/javascript">
+    console.log('We are in');
+
+
+
+    /*  */
+
+// Variables
+var speedTable = []
+//var elapsedTable = []
+var IP;
+
+
+// Start state
+$('body').addClass('noscroll');
+document.getElementById("start_button").style.cursor = "pointer"
+
+
+
+
+
+////// Localisation and ISP
+fetch('https://extreme-ip-lookup.com/json/')
+.then( res => res.json())
+.then(response => {
+    /// localisation
+    document.getElementById("continent").innerHTML = "Continent: "+response.continent;
+    document.getElementById("countryCode").innerHTML = "Country Code: "+response.countryCode;
+   
+    document.getElementById("country").innerHTML = "Country: "+response.country;
+ 
+    document.getElementById("region").innerHTML = "Region: "+response.region;
+   
+    document.getElementById("city").innerHTML = "City: "+response.city;
+   
+    document.getElementById("latitude").innerHTML = "Latitude: "+response.lat;
+  
+    document.getElementById("longitude").innerHTML = "Longitude: "+response.lon;
+    //Isp
+    document.getElementById("isp").innerHTML = "ISP: "+response.isp;
+    document.getElementById("org").innerHTML = "Org: "+response.org;
+    IP = response.query
+    document.getElementById("ip").innerHTML = "Ip: "+response.query;
+    document.getElementById("iptype").innerHTML = "IpType: "+response.ipType;
+    //var arr = navigator.userAgent.split(" ");
+    //document.getElementById("browser").innerHTML = "Browser: "+arr[arr.length-1]
+    //document.getElementById("system").innerHTML = "System: "+navigator.platform
+
+ })
+ .catch((data, status) => {
+    console.log('Request failed'+ status+ " "+data);
+ });
+
+
+
+
+ /////////////// My functions
+
+function showPage() {
+  document.getElementById("loader").style.display = "none";
+  document.getElementById("myDiv").style.display = "block";
+}
+
+ //Function called to start test
+document.getElementById("test_status").innerHTML = "Testing";
+$('body').removeClass('noscroll');
+console.log('We are starting..');
+window.scrollBy(0,600)
+TestDoing();
+function restart(){
+  document.getElementById("test_status").innerHTML = "Testing";
+  document.getElementById("start_button").innerHTML = "Restart";
+  TestDoing()
+}
+// Color change functions
+function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function changeColor(){
+  document.getElementById("http_test").style.color = getRandomColor();
+}
+
+
+//Finiched function
+function TestFinished(){
+  document.getElementById("test_status").innerHTML = "Test Finished";
+  document.getElementById("start_button").innerHTML = "Restart";
+}
+
+// Check Device Type
+function isMobileDevice() { 
+ if( navigator.userAgent.match(/iPhone/i)
+ || navigator.userAgent.match(/webOS/i)
+ || navigator.userAgent.match(/Android/i)
+ || navigator.userAgent.match(/iPad/i)
+ || navigator.userAgent.match(/iPod/i)
+ || navigator.userAgent.match(/BlackBerry/i)
+ || navigator.userAgent.match(/Windows Phone/i)
+ ){
+    return true;
+  }
+ else {
+    return false;
+  }
+}
+
+//Return table average number
+function numAverage(a) {
+  var b = a.length,
+      c = 0, i;
+  for (i = 0; i < b; i++){
+    c += Number(a[i]);
+  }
+  return c/b;
+}
+
+
+
+
+// Testdoing Function
+
+function TestDoing(){
+  function withElementDo(elementId, callable) {
+      const elem = document.getElementById(elementId)
+      if (elem) {
+        callable(elem)
+      }
+    }
+
+    function updateView(elementId, appInfo,ditype) {
+      withElementDo(elementId, function (elem) {
+        var speed = appInfo.Speed
+        console.log("In Html-Speed: "+speed+" Mbps")
+        if (speed != 0 && ditype == "down"){
+          document.getElementById("chart_down").innerHTML = speed + " Mbps"
+        }else if (speed != 0 && ditype == "up") {
+          document.getElementById("chart_up").innerHTML = Math.ceil(speed) + " Mbps"
+           TestFinished();
+        }
+           
+      })
+    }
+
+    
+let downAverage;
+    function runSomething(testName, callback,ditype) {
+      ndt7core.run(location.href, testName, function(ev, val) {
+        if (ev === 'complete') {
+          if (callback !== undefined) {
+            callback()
+          }
+          return
+        }
+        if (ev === 'measurement' && val.AppInfo !== undefined &&
+            val.Origin === 'client') {
+          updateView(testName, val.AppInfo,ditype)
+        }
+      })
+    }
+
+    function runDownload(callback) {
+      runSomething('download', callback,"down")
+    }
+
+    function runUpload(callback) {
+      runSomething('upload', callback,"up")
+    }
+
+    runDownload(function() { runUpload(); })
+
+}
+
+////////////////  -- End functions
+   </script>
 </body>
 </html>

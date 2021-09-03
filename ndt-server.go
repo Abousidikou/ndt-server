@@ -2,18 +2,20 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"crypto/tls"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"os/signal"
+
+	//"path/filepath"
 	"strconv"
 	"sync"
 	"syscall"
@@ -34,12 +36,11 @@ import (
 	"github.com/m-lab/ndt-server/platformx"
 	"github.com/m-lab/ndt-server/version"
 
-	//"github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
-	//logquic "github.com/lucas-clemente/quic-go/logging"
-	//"github.com/lucas-clemente/quic-go/qlog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/xyproto/sheepcounter"
 )
 
 var (
@@ -175,97 +176,50 @@ func (h bufferedWriteCloser) Close() error {
 	return h.Closer.Close()
 }
 
+var downDatalengh int64
+var downSpeed int64
+var durationDown int64
+var msgSize = 1 << 20 //32 KB
+var msg = generatePRData(int(msgSize))
+
 func downloadTest(rw http.ResponseWriter, req *http.Request) {
-	var mutex sync.Mutex
-	var StartTime = time.Now().UTC()
-	var spedDown int64
-	fmt.Println("Download Test...")
-	fmt.Println("StartTime: ", StartTime.String())
-	start := StartTime
-
-	// Guarantee results are written even if function panics.
-	defer func() {
-		var EndTime = time.Now().UTC()
-		fmt.Println("EndTime: ", EndTime.String())
-		mutex.Lock()
-		testFile, logerr := os.OpenFile("test.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
-		if logerr != nil {
-			return
-		}
-		defer testFile.Close()
-		testFile.WriteString("Download Test...\n")
-		testFile.WriteString("StartTime: " + StartTime.String() + "\n")
-		testFile.WriteString("Speed: " + strconv.FormatInt(spedDown, 10) + "\n")
-		testFile.WriteString("EndTime: " + EndTime.String() + "\n\n")
-		mutex.Unlock()
-	}()
-
-	// Run measurement.
-	var msgSize = 1 << 13
-	const every time.Duration = 250 * time.Millisecond
-
-	msg := generatePRData(int(msgSize))
-
-	var total int64
-	for {
-		//Sending data
-		if time.Since(StartTime) >= 13*time.Second {
-			return
-		}
-		rw.Write(msg)
-		total += int64(msgSize)
-		if time.Now().UTC().Sub(start) >= every {
-			bitSentTillNow := total * 8 // bytes * 8
-			spedDown = ((bitSentTillNow / int64(time.Since(StartTime).Milliseconds())) * 1000) / 1000000
-			fmt.Println("Speed : ", spedDown, " Mbits/s")
-			start = time.Now().UTC()
-		}
-		//fmt.Println("Message size:", msgSize)
-		if int64(msgSize) >= total/16 {
-			continue // message size still too big compared to sent data
-		}
-
-		if int64(msgSize) >= 1<<24 {
-			continue // message size still too big compared
-		}
-		msgSize *= 2
-		msg = generatePRData(int(msgSize))
-	}
-
+	fmt.Println("Download Subtest")
+	sc := sheepcounter.New(rw)
+	sc.Write(msg)
+	downDatalengh += sc.Counter()
+	fmt.Println("COUNTED:", downDatalengh) // Counts the bytes sent, for this response only
 }
 
-func uploadTest(rw http.ResponseWriter, req *http.Request) {
-	//Variables
-	var mutex sync.Mutex
-	var spedUp int64
-	var buf []byte
-	var err error
+func getDownSpeed(rw http.ResponseWriter, req *http.Request) {
+	timeString := req.FormValue("id")
+	fmt.Println("timeString: ", timeString)
+	t, _ := strconv.ParseFloat(timeString, 64)
+	durationDown = int64(t)
+	downSpeed = ((int64(downDatalengh*8) / int64(durationDown)) * 1000) / 1000000
+	fmt.Fprintf(rw, strconv.FormatInt(downSpeed, 10))
+	fmt.Println(downDatalengh, downSpeed, int64(durationDown))
+	downDatalengh = 0
+}
 
-	fmt.Println("Upload Test")
-	var StartTime = time.Now().UTC()
-	buf, err = ioutil.ReadAll(req.Body)
-	var EndTime = time.Since(StartTime)
+var upDatalengh int
+var upSpeed int64
+
+func uploadTest(rw http.ResponseWriter, req *http.Request) {
+	body := &bytes.Buffer{}
+	_, err := io.Copy(body, req.Body)
 	if err != nil {
 		log.Fatal("request", err)
 	}
+	upDatalengh += body.Len()
+}
 
-	// Speed Calculation
-	spedUp = ((int64(len(buf)*8) / int64(time.Since(StartTime).Milliseconds())) * 1000) / 1000000
-	fmt.Println("Speed: ", spedUp, " Mbits/s")
-	fmt.Fprintf(rw, "Success")
-
-	//Writing results
-	mutex.Lock()
-	testFile, logerr := os.OpenFile("test.log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0777)
-	if logerr != nil {
-		return
-	}
-	defer testFile.Close()
-	testFile.WriteString("Upload Test...\n")
-	testFile.WriteString("StartTime: " + StartTime.String() + "\n")
-	testFile.WriteString("Speed: " + strconv.FormatInt(spedUp, 10) + "\n")
-	testFile.WriteString("EndTime: " + EndTime.String() + "\n\n")
-	mutex.Unlock()
+func getUpSpeed(rw http.ResponseWriter, req *http.Request) {
+	timeString := req.FormValue("id")
+	//fmt.Println(reflect.TypeOf(timeString))
+	t, _ := strconv.ParseFloat(timeString, 64)
+	upSpeed = (((int64(upDatalengh) * 8) / int64(t)) * 1000) / 1000000
+	fmt.Println("upSpeed: ", upSpeed)
+	fmt.Fprintf(rw, strconv.FormatInt(int64(upDatalengh), 10))
 }
 
 /************************  End Functions ******************************/
@@ -370,11 +324,30 @@ func main() {
 	}
 
 	/****************************************** QUIC Setup  *******************************************/
-	// QUIC Handler
+	//runtime.GOMAXPROCS(4)
+	//TCP AND QUIC Handler
+	// Waitgroup
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	//goroutine serving on 4447
+	ndt7MuxTCPQuic := http.NewServeMux()
+	fmt.Println("About to setup QUIC")
+	ndt7MuxTCPQuic.Handle("/", http.FileServer(http.Dir(*htmlDir+"/stat")))
+	fmt.Println("About to listening on TCP AND QUIC :4447")
+	go func() {
+		log.Fatal(http3.ListenAndServe(":4447", *certFile, *keyFile, ndt7MuxTCPQuic))
+		wg.Done()
+	}()
+
+	// QUIC Handler goroutine serving on 4448
+	fmt.Println("For Quic Only")
 	ndt7MuxQuic := http.NewServeMux()
 	ndt7MuxQuic.HandleFunc("/api", func(w http.ResponseWriter, r *http.Request) { fmt.Fprintf(w, "Welcome on Quic Api") })
 	ndt7MuxQuic.HandleFunc("/download", downloadTest)
+	ndt7MuxQuic.HandleFunc("/getDownSpeed", getDownSpeed)
 	ndt7MuxQuic.HandleFunc("/upload", uploadTest)
+	ndt7MuxQuic.HandleFunc("/getUpSpeed", getUpSpeed)
 	ndt7MuxQuic.HandleFunc("/demo/upload", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			start := time.Now()
@@ -442,9 +415,41 @@ func main() {
 
 	// QUIC Server
 	fmt.Println("About to listening on QUIC :4448")
-	go log.Fatal(http3.ListenAndServe(":4448", *certFile, *keyFile, ndt7MuxQuic))
-	/*
+	go func() {
+		log.Fatal(http3.ListenAndServe(":4448", *certFile, *keyFile, ndt7MuxQuic))
 		// QUIC COnfig setup
+		/*fmt.Println("QuicConfig setup...")
+		quicConf := &quic.Config{}
+
+		// Qlog setup
+		quicConf.Tracer = qlog.NewTracer(func(_ logquic.Perspective, connID []byte) io.WriteCloser {
+			fmt.Println("Setting qlogs...")
+			fmt.Println(connID)
+			filename := fmt.Sprintf("server_%s.qlog", time.Now().String())
+			f, err := os.Create("./datadir/" + filename)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("Creating qlog file %s.\n", filename)
+			return NewBufferedWriteCloser(bufio.NewWriter(f), f)
+		})
+
+		// QUIC Server setup
+		fmt.Println("Quic Server setup...")
+		server := http3.Server{
+			Server:     &http.Server{Handler: ndt7MuxQuic, Addr: ":4448"},
+			QuicConfig: quicConf,
+		}
+
+		// Start listening
+		fmt.Println("About to listening on QUIC :4448")
+		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))*/
+		wg.Done()
+	}()
+	// wait until WaitGroup is done
+	wg.Wait()
+
+	/*	// QUIC COnfig setup
 		fmt.Println("QuicConfig setup...")
 		quicConf := &quic.Config{}
 
@@ -473,7 +478,6 @@ func main() {
 		log.Fatal(server.ListenAndServeTLS(*certFile, *keyFile))*/
 
 	/********************************************************************************************/
-
 	// Serve until the context is canceled.
 	<-ctx.Done()
 }

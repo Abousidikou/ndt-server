@@ -1,28 +1,25 @@
-onmessage = function (ev) {
-  'use strict'
+onmessage = async function (ev) {
   console.log("Download_Test")
-  let start = performance.now()
-  fetch("https://monitor.uac.bj:4448/download").then(response=>response.blob()).then(data=>{
-  let v = performance.now() - start
-  //console.log(data)
-  //console.log(data.size*8)
-  //console.log(v+" ms")
-  let bms = (data.size*8)/v
-  //console.log(bms+" bit/ms")
-  let bs = bms*1000
-  //console.log(bs + " bits/s")
-  let mbs = bs/1000000
-  console.log(Math.ceil(mbs)+" Mbps")
-  console.log("Success") 
-  postMessage({
-          'AppInfo': {
-            'ElapsedTime': v * 1000,  // us
-            'NumBytes': data.size,
-          },
-          'Origin': 'client',
-          'Test': 'download',
-        })
-  postMessage(null)
-  }).catch(err=>console.log(err))
-        
+    let res,data,dataLengh=0,duration,mbs=0,start = performance.now();
+    while(true){
+        res = await fetch("https://monitor.uac.bj:4448/download");
+        duration = performance.now() - start
+        data = await res.blob()
+        dataLengh += data.size
+        if(duration >  13000 ){
+            break;
+        }
+    }
+    let resp = await fetch("https://monitor.uac.bj:4448/getDownSpeed?id="+duration);
+    let sped = await  resp.text()
+    let bs = parseInt(sped) // bs
+    console.log(Math.ceil(bs)+" Mbps")
+      await postMessage({
+      'AppInfo': {
+        'Speed': bs,  // Mbps
+      },
+      'Origin': 'client',
+      'Test': 'download',
+    })
+    await postMessage(null)
 }

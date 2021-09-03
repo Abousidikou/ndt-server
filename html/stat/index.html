@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script type='text/javascript' src='ndt7-core.js'></script>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport">
+
+  <title>BjNetMonitor</title>
+  <meta content="" name="description">
+  <meta content="" name="keywords">
+  <!-- Vendor CSS Files -->
+  <link href="bootstrap.min.css" rel="stylesheet">
+  <!-- Template Main CSS File -->
+  <link href="stylePage.css" rel="stylesheet">
+
+  <!-- style text -->
+    <style type="text/css">
+    .testimonial-item{
+      text-align: left;
+      color: white;
+    }
+    .rounded{
+      background-image: url("images/footer-bg.jpg");
+    }
+    body.noscroll
+    {
+        position: fixed; 
+        overflow-y: scroll;
+        width: 100%;
+    }
+    html{
+      scroll-behavior: smooth;
+    }
+  </style>
+
+
+</head>
+<body>
+
+
+    <!-- ======= Hero Section ======= -->
+  <section id="hero">
+    <div class="hero-container" id="upload">
+      <h1 id="download">BJ Monitor SpeedTest</h1>
+      <h2>Test your Network Connexion</h2>
+      <a class="btn-get-started scrollto" onclick="Test()" id="start_button">Start QUIC Test</a>
+    </div>
+  </section><!-- End Hero -->
+
+
+  <!-- ======= Header ======= -->
+  <header id="header">
+    <div class="container-fluid d-flex align-items-center justify-content-between">
+      <h1 class="logo"><a href="index.html">BJNet MONITOR</a></h1>
+      <div class="header-social-links">
+       <!-- <a href="#" class="twitter"><i class="icofont-twitter"></i></a>
+        <a href="#" class="facebook"><i class="icofont-facebook"></i></a>
+        <a href="#" class="instagram"><i class="icofont-instagram"></i></a>
+        <a href="#" class="linkedin"><i class="icofont-linkedin"></i></i></a>-->
+      </div> 
+    </div>
+  </header><!-- End Header -->
+
+    <!-- Main -->
+    <main id="main">
+
+    <!-- ======= Test Section ======= -->
+    <section id="testing" class="about">
+      <div class="container">
+
+        <div class="section-title">
+          <h2 id="test_status">Ready for Test</h2>
+        </div>
+
+        <div class="row content text-center">
+          <div class="col-lg-6">
+            <div id="chart_down"></div>
+          </div>
+          <div class="col-lg-6 pt-4 pt-lg-0">
+            <div id="chart_up" ></div>
+          </div>
+        </div>
+
+      </div>
+    </section><!-- End About Section -->
+
+
+        <!-- ======= Counts Section ======= -->
+    <section id="counts" class="counts">
+      <div class="container">
+        <div class="row counters">
+          <div class="col-lg-3 col-6 text-center rounded border">
+                <div class="testimonial-item">
+                  <h3>Info</h3><br>
+                  <h5 id="isp"></h5>
+                  <h5 id="org"></h5>
+                  <h5 id="ip"></h5>
+                  <h5 id="iptype"></h5>
+                  <h5 id="system"></h5>
+                  <h5 id="browser"></h5>
+                </div>
+          </div>
+
+          <div class="col-lg-3 col-6 text-center rounded border">
+              <div class="testimonial-item">
+                <h3>Location</h3>
+                  <h5 id="continent"></h5>
+                  <h5 id="countryCode"></h5>
+                  <h5 id="country"></h5>
+                  <h5 id="region"></h5>
+                  <h5 id="city"></h5>
+                  <h5 id="latitude"></h5>
+                  <h5 id="longitude"></h5>
+              </div>
+          </div>
+
+
+          <div class="col-lg-3 col-6 text-center rounded border">
+            <h3 style="color: white">Download</h3>
+              <div class="testimonial-item text-center">
+                Average: <h5 id="down_average"></h5>
+                  
+              </div>
+          </div>
+
+          <div class="col-lg-3 col-6 text-center rounded border">
+            <h3 style="color: white">Upload</h3>
+              <div class="testimonial-item text-center">
+                Average: <h5 id="up_average"></h5>
+                  
+              </div>
+          </div>
+
+          
+
+          
+        </div>
+      </div>  
+    </section><!-- End Counts Section -->
+
+
+<!-- ======= Footer ======= -->
+  <footer id="footer">
+
+    <div class="footer-top">
+
+      <div class="container">
+
+        <div class="row  justify-content-center">
+          <div class="col-lg-6">
+            <h3>BJNET MONITOR SPEEDTEST</h3>
+            <p>Get fingerprint of your network</p>
+          </div>
+        </div>
+
+        
+        <!--<div class="header-social-links">
+        <a href="#" class="twitter"><i class="icofont-twitter"></i></a>
+        <a href="#" class="facebook"><i class="icofont-facebook"></i></a>
+        <a href="#" class="instagram"><i class="icofont-instagram"></i></a>
+        <a href="#" class="linkedin"><i class="icofont-linkedin"></i></i></a>
+      </div>
+
+        <div class="row footer-newsletter justify-content-center">
+          <div class="col-lg-6">
+            <form action="" method="post">
+              <input type="email" name="email" placeholder="Enter your Email"><input type="submit" value="Subscribe">
+            </form>
+          </div>
+        </div>-->
+
+
+
+      </div>
+    </div>
+
+    <div class="container footer-bottom clearfix">
+      <div class="copyright">
+        <!-- Footer a gauche -->
+      </div>
+      <div class="credits">
+        <!-- Footer a droite -->
+      </div>
+    </div>
+  </footer><!-- End Footer -->    
+
+  <div id="preloader"></div>
+  <!-- Vendor JS Files -->
+  <script src="jquery.min.js"></script>
+  <script src="jquery.easing.min.js"></script>
+  <script src="jquery.sticky.js"></script>
+  <!-- Template Main JS File -->
+  <script src="main.js"></script>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+
+
+  <!-- Script javascript -->
+  <script type="text/javascript">
+    console.log('We are in');
+
+// Variables
+var speedTable = []
+//var elapsedTable = []
+var IP;
+
+// Start state
+$('body').addClass('noscroll');
+document.getElementById("start_button").style.cursor = "pointer"
+
+
+////// Localisation and ISP
+fetch('https://extreme-ip-lookup.com/json/')
+.then( res => res.json())
+.then(response => {
+    /// localisation
+    document.getElementById("continent").innerHTML = "Continent: "+response.continent;
+    document.getElementById("countryCode").innerHTML = "Country Code: "+response.countryCode;
+   
+    document.getElementById("country").innerHTML = "Country: "+response.country;
+ 
+    document.getElementById("region").innerHTML = "Region: "+response.region;
+   
+    document.getElementById("city").innerHTML = "City: "+response.city;
+   
+    document.getElementById("latitude").innerHTML = "Latitude: "+response.lat;
+  
+    document.getElementById("longitude").innerHTML = "Longitude: "+response.lon;
+    //Isp
+    document.getElementById("isp").innerHTML = "ISP: "+response.isp;
+    document.getElementById("org").innerHTML = "Org: "+response.org;
+    IP = response.query
+    document.getElementById("ip").innerHTML = "Ip: "+response.query;
+    document.getElementById("iptype").innerHTML = "IpType: "+response.ipType;
+    //var arr = navigator.userAgent.split(" ");
+    //document.getElementById("browser").innerHTML = "Browser: "+arr[arr.length-1]
+    //document.getElementById("system").innerHTML = "System: "+navigator.platform
+
+ })
+ .catch((data, status) => {
+    console.log('Request failed'+ status+ " "+data);
+ });
+
+
+
+
+ /////////////// My functions
+
+ //Function called to start test
+function Test(){
+  window.location = "https://monitor.uac.bj:4448"
+}
+
+// Color change functions
+function getRandomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function changeColor(){
+  document.getElementById("http_test").style.color = getRandomColor();
+}
+
+
+//Finiched function
+function TestFinished(){
+  document.getElementById("test_status").innerHTML = "Test Finished";
+  document.getElementById("start_button").innerHTML = "Restart";
+}
+
+// Check Device Type
+function isMobileDevice() { 
+ if( navigator.userAgent.match(/iPhone/i)
+ || navigator.userAgent.match(/webOS/i)
+ || navigator.userAgent.match(/Android/i)
+ || navigator.userAgent.match(/iPad/i)
+ || navigator.userAgent.match(/iPod/i)
+ || navigator.userAgent.match(/BlackBerry/i)
+ || navigator.userAgent.match(/Windows Phone/i)
+ ){
+    return true;
+  }
+ else {
+    return false;
+  }
+}
+
+//Return table average number
+function numAverage(a) {
+  var b = a.length,
+      c = 0, i;
+  for (i = 0; i < b; i++){
+    c += Number(a[i]);
+  }
+  return c/b;
+}
+
+
+
+
+// Testdoing Function
+
+function TestDoing(){
+  function withElementDo(elementId, callable) {
+      const elem = document.getElementById(elementId)
+      if (elem) {
+        callable(elem)
+      }
+    }
+
+    function updateView(elementId, appInfo,canvasId) {
+      withElementDo(elementId, function (elem) {
+        const elapsed = appInfo.ElapsedTime / 1e06     /* second */
+        var speed = appInfo.NumBytes / elapsed         /* B/s    */
+        speed *= 8                                     /* bit/s  */
+        speed /= 1e06                                  /* Mbit/s */
+        //elem.innerHTML = speed.toFixed(3) + ' Mbit/s'
+        //elapsedTable.push(appInfo.ElapsedTime)
+        speedTable.push(speed)
+        
+
+        // Google chart
+        google.charts.load('current', {'packages':['gauge']});
+        google.charts.setOnLoadCallback(drawChart);
+        function drawChart() {
+
+         var dataDownload = google.visualization.arrayToDataTable([
+          ['Label', 'Value'],
+          ['Down', 0.000],
+        ])
+         var dataUpload = google.visualization.arrayToDataTable([
+          ['Label', 'Value'],
+          ['Up', 0.000],
+        ])
+         if (isMobileDevice() == true) {
+              var options = {
+                    width: 300, height: 300,
+                    redFrom: 90, redTo: 100,
+                    yellowFrom:75, yellowTo: 90,
+                    minorTicks: 2
+                  };
+          } else {
+              var options = {
+                  width: 700, height: 500,
+                  redFrom: 90, redTo: 100,
+                  yellowFrom:75, yellowTo: 90,
+                  minorTicks: 2
+                };
+                  }
+                
+
+        var chart_down = new google.visualization.Gauge(document.getElementById('chart_down')); 
+        var chart_up = new google.visualization.Gauge(document.getElementById('chart_up'));     
+        if (canvasId == "chart_down"){
+          dataDownload.setValue(0,1,speed.toFixed(3))
+          chart_down.draw(dataDownload, options);
+          chart_up.draw(dataUpload, options);
+        }else{
+          dataUpload.setValue(0,1,speed.toFixed(3))
+          chart_up.draw(dataUpload, options);
+        }
+        
+        //console.log('Speed : '+speed.toFixed(3))
+        //console.log('charts:'+dataDownload.getValue(0,1))
+      }
+      /// End google chart
+
+
+
+      })
+    }
+
+    
+let downAverage;
+    function runSomething(testName, callback, canvasId) {
+      ndt7core.run(location.href, testName, function(ev, val) {
+        if (ev === 'complete') {
+          if (canvasId == "chart_down") {
+            downAverage = numAverage(speedTable).toFixed(2)
+            
+            document.getElementById("down_average").innerHTML = numAverage(speedTable).toFixed(2)+" Mbit/s"
+
+            speedTable = []
+          } else {
+            document.getElementById("up_average").innerHTML = numAverage(speedTable).toFixed(2)+" Mbit/s"
+            TestFinished();
+          }
+
+          if (callback !== undefined) {
+            callback()
+          }
+          return
+        }
+        if (ev === 'measurement' && val.AppInfo !== undefined &&
+            val.Origin === 'client') {
+          updateView(testName, val.AppInfo, canvasId)
+        }
+      })
+    }
+
+    function runDownload(callback) {
+      runSomething('download', callback, "chart_down")
+    }
+
+    function runUpload(callback) {
+      runSomething('upload', callback, "chart_up")
+    }
+
+    runDownload(function() { runUpload(); })
+
+}
+
+////////////////  -- End functions
+   </script>
+</body>
+</html>
