@@ -13,6 +13,11 @@ and tested for running on Linux 4.17+.
 
 ### Primary setup & running (Linux)
 
+Clone git repository
+```bash
+git clone https://github.com/Abousidikou/ndt-server.git && cd ndt-server
+```
+
 Prepare the runtime environment
 
 ```bash
@@ -20,7 +25,7 @@ install -d certs datadir
 ```
 
 To run the server locally, generate local self signed certificates (`key.pem`
-and `cert.pem`) using bash and OpenSSL. 
+and `cert.pem`) using bash and OpenSSL. To run it remotely skip to next step.
 
 ```bash
 ./gen_local_test_certs.bash
@@ -30,7 +35,7 @@ Use your certificates if you already have.
 Copy them into certs files
 
 ```bash
-cp <path to certificate and key> certs/
+cp <path to certificate.pem and key.pem> certs/
 ```
 
 
@@ -46,6 +51,7 @@ enable BBR (with which ndt7 works much better)
 ```
 sudo modprobe tcp_bbr
 ```
+
 QUIC transfers on high-bandwidth connections can be limited by the size of the UDP receive buffer.
 This buffer holds packets that have been received by the kernel, but not yet read by the application (quic-go in this case).
 It is recommended to increase the maximum buffer size by running:
@@ -61,7 +67,7 @@ docker run  --network=host                       \
            --volume `pwd`/certs:/certs:ro        \
            --volume `pwd`/datadir:/datadir       \
            --volume `pwd`/html:/html             \
-           sidikhub/ndt-server:quic              \
+           sidikhub/ndt-server:quic1.0              \
            -cert /certs/fullchain.pem            \
            -key /certs/privkey.pem               \
            -datadir /datadir                     \
