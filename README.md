@@ -24,13 +24,6 @@ Prepare the runtime environment
 install -d certs datadir
 ```
 
-To run the server locally, generate local self signed certificates (`key.pem`
-and `cert.pem`) using bash and OpenSSL. To run it remotely skip to next step.
-
-```bash
-./gen_local_test_certs.bash
-```
-
 Use your certificates if you already have.
 Copy them into certs files
 
@@ -111,4 +104,11 @@ deployment, hence you should ignore this warning and continue):
 * demo upload file on https://ip:4448/demo/upload
 * see demo data uploaded https://ip:4448/data 
 
+To run the server locally, generate local self signed certificates (`key.pem`
+and `cert.pem`) using bash and OpenSSL. To run it remotely skip to next step.
+
+```bash
+./gen_local_test_certs.bash
+```
+           
 Replace `ip` with the `External IP` of the server to access them externally or with `localhost`.
