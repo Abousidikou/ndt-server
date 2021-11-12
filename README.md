@@ -32,18 +32,7 @@ cp <path to certificate.pem and key.pem> certs/
 ```
 
 
-Want to build another images for `ndt-server` after modifying files?
-If not, skip
 
-```bash
-docker build . -t ndt-server
-```
-
-enable BBR (with which ndt7 works much better)
-
-```
-sudo modprobe tcp_bbr
-```
 
 QUIC transfers on high-bandwidth connections can be limited by the size of the UDP receive buffer.
 This buffer holds packets that have been received by the kernel, but not yet read by the application (quic-go in this case).
@@ -67,25 +56,6 @@ docker run  --network=host                       \
            -ndt7_addr ip:4444         \
            -ndt7_addr_cleartext ip:4446
 ```
-
-### Problem when installing it binding port 80 and 443
-This is the error that will be encountered : `listen tcp :80: bind: permission denied`
-If you are uisng Alpine, which you probably should be, you will need to install the libcap package before you can use the setcap command. You can install and call setcap with one line: `RUN apk add libcap && setcap 'cap_net_bind_service=+ep' /path-to-app-here` .
-
-
-### Alternate setup & running (Windows & MacOS)
-
-These instructions assume you have Docker for Windows/Mac installed.
-
-**Note: NDT5 does not work on Docker for Windows/Mac as it requires using the host's network, which is only supported on Linux**
-
-```
-docker-compose run ndt-server ./gen_local_test_certs.bash
-docker-compose up
-```
-
-After making changes you will have to run `docker-compose up --build` to rebuild the ntd-server binary.
-
 ## Accessing the service
 
 Once you have done that, you should have a ndt5 server running on ports
@@ -102,7 +72,28 @@ deployment, hence you should ignore this warning and continue):
 * ndt7 on ws   http://ip:4446 (http test)
 * quic  https://ip:4448 (QUIC Test)
 * demo upload file on https://ip:4448/demo/upload
-* see demo data uploaded https://ip:4448/data 
+* see demo data uploaded https://ip:4448/data
+           
+           
+## Problem when installing it binding port 80 and 443
+This is the error that will be encountered : `listen tcp :80: bind: permission denied`
+If you are uisng Alpine, which you probably should be, you will need to install the libcap package before you can use the setcap command. You can install and call setcap with one line: `RUN apk add libcap && setcap 'cap_net_bind_service=+ep' /path-to-app-here` .
+
+
+## Alternate setup & running (Windows & MacOS)
+
+These instructions assume you have Docker for Windows/Mac installed.
+
+**Note: NDT5 does not work on Docker for Windows/Mac as it requires using the host's network, which is only supported on Linux**
+
+```
+docker-compose run ndt-server ./gen_local_test_certs.bash
+docker-compose up
+```
+
+After making changes you will have to run `docker-compose up --build` to rebuild the ntd-server binary.
+
+ 
 
 To run the server locally, generate local self signed certificates (`key.pem`
 and `cert.pem`) using bash and OpenSSL. To run it remotely skip to next step.
@@ -112,3 +103,14 @@ and `cert.pem`) using bash and OpenSSL. To run it remotely skip to next step.
 ```
            
 Replace `ip` with the `External IP` of the server to access them externally or with `localhost`.
+           
+
+Want to build another images for `ndt-server` after modifying files? If not, skip
+```bash
+docker build . -t ndt-server
+```
+
+enable BBR (with which ndt7 works much better)
+```
+sudo modprobe tcp_bbr
+```
