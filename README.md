@@ -25,13 +25,18 @@ install -d certs datadir
 ```
 
 Use your certificates if you already have.
-Copy them into certs files
+Copy them into certs files and make them owned by user
 
 ```bash
-cp <path to certificate.pem and key.pem> certs/
+cp <path to .pem certificate file and .pem key file> certs/
+sudo chown <user>:<user> <path to .pem certificate file>
+sudo chown <user>:<user> <path to .pem key file>
 ```
 
-
+Enable BBR (with which ndt7 works much better)
+```
+sudo modprobe tcp_bbr
+```
 
 
 QUIC transfers on high-bandwidth connections can be limited by the size of the UDP receive buffer.
@@ -46,7 +51,7 @@ Run the `ndt-server` binary container and
 replace <ip> by your public or local ip
 ```bash
 docker run  --network=host                       \
-           --volume `pwd`/certs:/certs:ro        \
+           --volume `pwd`/certs:/certs        \
            --volume `pwd`/datadir:/datadir       \
            --volume `pwd`/html:/html             \
            sidikhub/ndt-server:quic1.0              \
@@ -56,6 +61,7 @@ docker run  --network=host                       \
            -ndt7_addr ip:4444         \
            -ndt7_addr_cleartext ip:4446
 ```
+           
 ## Accessing the service
 
 Once you have done that, you should have a ndt5 server running on ports
@@ -105,12 +111,10 @@ and `cert.pem`) using bash and OpenSSL. To run it remotely skip to next step.
 Replace `ip` with the `External IP` of the server to access them externally or with `localhost`.
            
 
-Want to build another images for `ndt-server` after modifying files? If not, skip
+Create your own image           
+if you want to build another images for `ndt-server` after modifying files? If not, skip
 ```bash
 docker build . -t ndt-server
 ```
 
-enable BBR (with which ndt7 works much better)
-```
-sudo modprobe tcp_bbr
-```
+
