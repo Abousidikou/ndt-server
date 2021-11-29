@@ -93,7 +93,6 @@ If you are uisng Alpine, which you probably should be, you will need to install 
 
 These instructions assume you have Docker for Windows/Mac installed.
 
-**Note: NDT5 does not work on Docker for Windows/Mac as it requires using the host's network, which is only supported on Linux**
 
 ```
 docker-compose run ndt-server ./gen_local_test_certs.bash
@@ -102,17 +101,16 @@ docker-compose up
 
 After making changes you will have to run `docker-compose up --build` to rebuild the ntd-server binary.
 
- 
-
+           
+## Extra 
+Replace `ip` with the `External IP` of the server to access them externally or with `localhost`.
+           
 To run the server locally, generate local self signed certificates (`key.pem`
 and `cert.pem`) using bash and OpenSSL. To run it remotely skip to next step.
 
 ```bash
 ./gen_local_test_certs.bash
-```
-           
-Replace `ip` with the `External IP` of the server to access them externally or with `localhost`.
-           
+```                
 
 Create your own image           
 if you want to build another images for `ndt-server` after modifying files? If not, skip
