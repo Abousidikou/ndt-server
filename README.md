@@ -15,7 +15,7 @@ and tested for running on Linux 4.17+.
 
 Clone git repository
 ```bash
-git clone https://github.com/Abousidikou/ndt-server.git && cd ndt-server
+git clone https://github.com/Abousidikou/ndt-server.git && cd ndt-server 
 ```
 
 Prepare the runtime environment
@@ -32,6 +32,8 @@ cp <path to .pem certificate file and .pem key file> certs/
 sudo chown <user>:<user> <path to .pem certificate file>
 sudo chown <user>:<user> <path to .pem key file>
 ```
+Don't forget progrmming automatic copy and owning with [cron on linux](https://www.howtogeek.com/101288/how-to-schedule-tasks-on-linux-an-introduction-to-crontab-files/) 
+
 
 Enable BBR (with which ndt7 works much better)
 ```
@@ -61,7 +63,8 @@ docker run  --network=host                       \
            -ndt7_addr ip:4444         \
            -ndt7_addr_cleartext ip:4446
 ```
-           
+       
+        
 ## Accessing the service
 
 Once you have done that, you should have a ndt5 server running on ports
@@ -83,7 +86,7 @@ deployment, hence you should ignore this warning and continue):
            
 ## Problem when installing it binding port 80 and 443
 This is the error that will be encountered : `listen tcp :80: bind: permission denied`
-If you are uisng Alpine, which you probably should be, you will need to install the libcap package before you can use the setcap command. You can install and call setcap with one line: `RUN apk add libcap && setcap 'cap_net_bind_service=+ep' /path-to-app-here` .
+If you are uisng Alpine, which you probably should be, you will need to install the libcap package before you can use the setcap command. You can install and call setcap with one line: `RUN apk add libcap && setcap 'cap_net_bind_service=+ep' /path-to-app-here` . This command is add to the `Dockerfile`.
 
 
 ## Alternate setup & running (Windows & MacOS)
