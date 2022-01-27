@@ -25,13 +25,10 @@ install -d certs datadir
 ```
 
 Use your certificates if you already have.
-Copy them into certs files and make them owned by user
+Copy them into certs files and make them owned by user.
+
 *If your certificate is not fullchain.pem and your private key is not privkey.pem, change them in cpCerts.sh before continue*.
-```bash
-cp <path to .pem certificate file and .pem key file> certs/
-sudo chown <user>:<user> <path to .pem certificate file>
-sudo chown <user>:<user> <path to .pem key file>
-```
+
 Don't forget programming automatic copy and owning with [cron on linux](https://www.howtogeek.com/101288/how-to-schedule-tasks-on-linux-an-introduction-to-crontab-files/)
 
 Prepare certificate copy file:
