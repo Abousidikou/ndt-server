@@ -26,14 +26,34 @@ install -d certs datadir
 
 Use your certificates if you already have.
 Copy them into certs files and make them owned by user
-
+*If your certificate is not fullchain.pem and your private key is not privkey.pem, change them in cpCerts.sh before continue*.
 ```bash
 cp <path to .pem certificate file and .pem key file> certs/
 sudo chown <user>:<user> <path to .pem certificate file>
 sudo chown <user>:<user> <path to .pem key file>
 ```
-Don't forget progrmming automatic copy and owning with [cron on linux](https://www.howtogeek.com/101288/how-to-schedule-tasks-on-linux-an-introduction-to-crontab-files/) 
+Don't forget programming automatic copy and owning with [cron on linux](https://www.howtogeek.com/101288/how-to-schedule-tasks-on-linux-an-introduction-to-crontab-files/)
 
+Prepare certificate copy file:
+```bash
+chmod +x cpCerts.sh
+cp cpCerts.sh ~/go/bin
+sudo chown root:root ~/go/bin/cpCerts.sh
+```
+Démarrer crontab sous root:
+```bash
+sudo su
+crontab -e
+```
+Ajouter ceci en tête de ligne
+```bash
+PATH=/usr/bin:/bin:/home/emes/go/bin
+```
+
+Ajouter ceci en fin de ligne pour exécuter ce cron toutes les minutes(Copie des certificats)
+```bash
+* * * * * cpCerts emes /etc/letsencrypt/live/emes.bj /home/emes/ndt/ndt-server/certs
+```
 
 Enable BBR (with which ndt7 works much better)
 ```
