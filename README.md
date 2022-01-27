@@ -49,6 +49,10 @@ PATH=/usr/bin:/bin:/home/emes/go/bin
 
 Ajouter ceci en fin de ligne pour exécuter ce cron toutes les minutes(Copie des certificats)
 ```bash
+* * * * * cpCerts username <path of certificate and private jey directory> <certs directory path>
+```
+Example:
+```bash
 * * * * * cpCerts emes /etc/letsencrypt/live/emes.bj /home/emes/ndt/ndt-server/certs
 ```
 
