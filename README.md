@@ -6,12 +6,20 @@ This repository contains a [ndt5](
 https://github.com/ndt-project/ndt/wiki/NDTProtocol) and [ndt7](
 spec/ndt7-protocol.md) server written in Go. This code may compile under
 many systems, including macOS and Windows, but is specifically designed
-and tested for running on Linux 4.17+.
+and tested for running on Linux 4.17+. We chose the last version of it[ndt7](
+spec/ndt7-protocol.md).
 
 
 ## Setup
 
 ### Primary setup & running (Linux)
+
+Install docker and git: 
+For installing docker, visit [this page](https://docs.docker.com/engine/install/ubuntu/)
+```bash
+sudo apt install git
+```
+
 
 Clone git repository
 ```bash
@@ -51,7 +59,7 @@ Ajouter ceci en fin de ligne pour exécuter ce cron toutes les minutes(Copie des
 ```bash
 * * * * * cpCerts.sh username <path of certificate and private jey directory> <certs directory path>
 ```
-Example:
+Example about emes.bj:
 ```bash
 * * * * * cpCerts.sh emes /etc/letsencrypt/live/emes.bj /home/emes/ndt/ndt-server/certs
 ```
@@ -77,6 +85,7 @@ docker run  --network=host                       \
            --volume `pwd`/certs:/certs        \
            --volume `pwd`/datadir:/datadir       \
            --volume `pwd`/html:/html             \
+           --name ndt_service             \
            sidikhub/ndt-server:quic1.0              \
            -cert /certs/fullchain.pem            \
            -key /certs/privkey.pem               \
