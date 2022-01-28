@@ -77,6 +77,10 @@ It is recommended to increase the maximum buffer size by running:
 ```bash
 sysctl -w net.core.rmem_max=2500000
 ```
+**Important**
+
+Replace **access_key** in html/index.html by your *api key* found on [eXTReMe-IP-Lookup website](https://extreme-ip-lookup.com)
+
 
 Run the `ndt-server` binary container and
 replace <ip> by your public or local ip
