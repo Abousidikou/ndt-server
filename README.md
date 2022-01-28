@@ -45,6 +45,7 @@ chmod +x cpCerts.sh
 cp cpCerts.sh ~/go/bin
 sudo chown root:root ~/go/bin/cpCerts.sh
 ```
+
 Démarrer crontab sous root:
 ```bash
 sudo su
@@ -79,8 +80,11 @@ sysctl -w net.core.rmem_max=2500000
 ```
 **Important**
 
-Replace **access_key** in html/index.html by your *api key* found on [eXTReMe-IP-Lookup website](https://extreme-ip-lookup.com)
-
+Replace **access_key** in <html/index.html>  by your *api key* found on [eXTReMe-IP-Lookup website](https://extreme-ip-lookup.com)
+```bash
+Line 198
+fetch('https://extreme-ip-lookup.com/json/?key=access_key')
+```
 
 Run the `ndt-server` binary container and
 replace <ip> by your public or local ip
