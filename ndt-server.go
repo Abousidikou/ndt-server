@@ -363,8 +363,8 @@ func main() {
 		}
 
 		// Qlog setup
+		fmt.Println("Setting qlogs...")
 		quicC.Tracer = qlog.NewTracer(func(_ logquic.Perspective, connID []byte) io.WriteCloser {
-			fmt.Println("Setting qlogs...")
 			//fmt.Println(connID)
 			filename := fmt.Sprintf("datadir/server_%s.qlog", time.Now().String())
 			fmt.Println("Filename: ", filename)
