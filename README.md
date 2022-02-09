@@ -99,9 +99,15 @@ docker run  --network=host                       \
            -key /certs/privkey.pem               \
            -datadir /datadir                     \
            -ndt7_addr ip:4444         \
+<<<<<<< HEAD
            -ndt7_addr_cleartext ip:4446  \
            -quiccmdAddr 196.192.16.70:4447      \
            -quicwebAddr 196.192.16.70:4448
+=======
+           -ndt7_addr_cleartext ip:4446 \
+           -quiccmdAddr ip:4447        \
+           -quicwebAddr ip:4448
+>>>>>>> ad8dcac2078e026521eb26e8a301d0c134f82520
 ```
        
         
