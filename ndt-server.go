@@ -31,20 +31,24 @@ import (
 	"github.com/m-lab/ndt-server/ndt5/plain"
 	"github.com/m-lab/ndt-server/ndt7/handler"
 	"github.com/m-lab/ndt-server/ndt7/listener"
-	"github.com/m-lab/ndt-server/ndt7/results"
+	//"github.com/m-lab/ndt-server/ndt7/results"
 	"github.com/m-lab/ndt-server/ndt7/spec"
 	"github.com/m-lab/ndt-server/platformx"
 	"github.com/m-lab/ndt-server/version"
 
+	quic "github.com/lucas-clemente/quic-go"
 	"github.com/lucas-clemente/quic-go/http3"
+	logquic "github.com/lucas-clemente/quic-go/logging"
+	"github.com/lucas-clemente/quic-go/qlog"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-
 	"github.com/xyproto/sheepcounter"
 )
 
 var (
 	// Flags that can be passed in on the command line
+	quicwebAddr       = flag.String("quicwebAddr", ":4448", "The address and port to use for the quic web test")
+	quiccmdAddr       = flag.String("quiccmdAddr", ":4447", "The address and port to use for the quic test in cmd line")
 	ndt7Addr          = flag.String("ndt7_addr", ":443", "The address and port to use for the ndt7 test")
 	ndt7AddrCleartext = flag.String("ndt7_addr_cleartext", ":80", "The address and port to use for the ndt7 cleartext test")
 	ndt5Addr          = flag.String("ndt5_addr", ":3001", "The address and port to use for the unencrypted ndt5 test")
@@ -176,11 +180,26 @@ func (h bufferedWriteCloser) Close() error {
 	return h.Closer.Close()
 }
 
+var msgSize = 1 << 25 //33 MB
+var msg = generatePRData(int(msgSize))
+var downloadSpeed string
 var downDatalengh int64
 var downSpeed int64
 var durationDown int64
-var msgSize = 1 << 20 //32 KB
-var msg = generatePRData(int(msgSize))
+
+const ratio = 1048576
+
+// Setup a bare-bones TLS config for the server
+func generateTLSConfig() *tls.Config {
+	tlsCert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
+	if err != nil {
+		panic(err)
+	}
+	return &tls.Config{
+		Certificates: []tls.Certificate{tlsCert},
+		NextProtos:   []string{"quic-echo-example"},
+	}
+}
 
 func downloadTest(rw http.ResponseWriter, req *http.Request) {
 	fmt.Println("Download Subtest")
@@ -276,8 +295,10 @@ func main() {
 
 	// The ndt7 listener serving up NDT7 tests, likely on standard ports.
 	ndt7Mux := http.NewServeMux()
-	ndt7Mux.HandleFunc("/file", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, results.FileStored)
+	ndt7Mux.HandleFunc("/downloadStat", func(w http.ResponseWriter, r *http.Request) {
+		tmp := downloadSpeed
+		downloadSpeed = ""
+		fmt.Fprintf(w, tmp)
 	})
 	ndt7Mux.Handle("/", http.FileServer(http.Dir(*htmlDir)))
 	ndt7Handler := &handler.Handler{
@@ -336,7 +357,85 @@ func main() {
 	ndt7MuxTCPQuic.Handle("/", http.FileServer(http.Dir(*htmlDir+"/stat")))
 	fmt.Println("About to listening on TCP AND QUIC :4447")
 	go func() {
-		log.Fatal(http3.ListenAndServe(":4447", *certFile, *keyFile, ndt7MuxTCPQuic))
+		fmt.Println("QUIC Testing...")
+		quicC := &quic.Config{
+			//MaxIdleTimeout: 60 * time.Second,
+		}
+
+		// Qlog setup
+		quicC.Tracer = qlog.NewTracer(func(_ logquic.Perspective, connID []byte) io.WriteCloser {
+			fmt.Println("Setting qlogs...")
+			//fmt.Println(connID)
+			filename := fmt.Sprintf("datadir/server_%s.qlog", time.Now().String())
+			fmt.Println("Filename: ", filename)
+			f, err := os.Create(filename)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Printf("Creating qlog file %s.\n", filename)
+			return NewBufferedWriteCloser(bufio.NewWriter(f), f)
+		})
+
+		listener, err := quic.ListenAddr(*quiccmdAddr, generateTLSConfig(), quicC)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		//fmt.Println("Listening on ", addr)
+		defer listener.Close()
+		for true {
+			//fmt.Println("Waiting for Test")
+			sess, err := listener.Accept(context.Background())
+			if err != nil {
+				fmt.Println("Session creating error:", err)
+				return
+			}
+			//fmt.Println("Connection Accepted")
+			//fmt.Println(sess.ConnectionState())
+			//fmt.Println("Server: ", sess.LocalAddr())
+			//fmt.Println(sess.RemoteAddr())
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				//fmt.Println("Waiting for next stream. open by peer..")
+				stream, err := sess.AcceptStream(context.Background())
+				if err != nil {
+					fmt.Println("Stream creating error: ", err)
+					return
+				}
+				//fmt.Println("Stream Accepted with ID: ", stream.StreamID())
+
+				fmt.Println("Download Testing...")
+				stream.SetReadDeadline(time.Now().Add(13 * time.Second))
+				t1 := time.Now()
+				//bytesReceived, err := io.Copy(&buf, stream) //loggingWriter{stream}
+				buf := make([]byte, len(msg))
+				bytesReceived, _ := io.ReadFull(stream, buf)
+				d_temp := time.Since(t1)
+				fmt.Println("Bytes Received: ", bytesReceived)
+				fmt.Println("Time for receiving", d_temp.Microseconds())
+				bps := float64(bytesReceived*8) / d_temp.Seconds()
+				Mbps := float64(bps / ratio)
+				downloadSpeed = fmt.Sprintf("%.3f", Mbps)
+				fmt.Printf("Download Speed: %.3f Mbps", Mbps)
+				fmt.Println("")
+
+				fmt.Println("Upload Testing...")
+				stream.SetWriteDeadline(time.Now().Add(13 * time.Second))
+				bytesSent, _ := stream.Write(msg)
+				fmt.Println("Bytes sent:", bytesSent)
+				fmt.Println("")
+
+				// sending download stat
+				/*d_stat, err := sess.OpenStreamSync(context.Background())
+				s := fmt.Sprintf("%.3f", Mbps)
+				stream.SetWriteDeadline(time.Now().Add(3 * time.Second))
+				bytesSent, _ = stream.Write([]byte(s))*/
+
+			}()
+		}
+
+		//log.Fatal(http3.ListenAndServe(":4447", *certFile, *keyFile, ndt7MuxTCPQuic))
 		wg.Done()
 	}()
 
@@ -416,7 +515,7 @@ func main() {
 	// QUIC Server
 	fmt.Println("About to listening on QUIC :4448")
 	go func() {
-		log.Fatal(http3.ListenAndServe(":4448", *certFile, *keyFile, ndt7MuxQuic))
+		log.Fatal(http3.ListenAndServe(*quicwebAddr, *certFile, *keyFile, ndt7MuxQuic))
 		// QUIC COnfig setup
 		/*fmt.Println("QuicConfig setup...")
 		quicConf := &quic.Config{}
