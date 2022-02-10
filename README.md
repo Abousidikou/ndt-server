@@ -65,17 +65,19 @@ Example about emes.bj:
 * * * * * cpCerts.sh emes /etc/letsencrypt/live/emes.bj /home/emes/ndt/ndt-server/certs
 ```
 
-Enable BBR (with which ndt7 works much better)
+
+Open /root/.basshrc
 ```
-sudo modprobe tcp_bbr
+sudo nano  /root/.basshrc
 ```
 
 
 QUIC transfers on high-bandwidth connections can be limited by the size of the UDP receive buffer.
 This buffer holds packets that have been received by the kernel, but not yet read by the application (quic-go in this case).
-It is recommended to increase the maximum buffer size by running:
-(2.5MB)
+It is recommended to increase the maximum buffer size by running and enable BBR (with which ndt7 works much better):
+(2.5MB). Paste these lines
 ```bash
+modprobe tcp_bbr
 sysctl -w net.core.rmem_max=2500000
 ```
 **Important**
