@@ -1,11 +1,19 @@
 onmessage = async function (ev) {
   console.log("Download_Test")
-    let res,data,dataLengh=0,duration,mbs=0,start = performance.now();
+    let res,data,dataLengh=0,duration,previous,realTime=0,mbs=0,start = performance.now();
     while(true){
+        previous = performance.now()
         res = await fetch("https://monitor.uac.bj:4448/download");
+        duration = performance.now() - previous
+        realTime += duration
+        console.log("Realtime: "+realTime)
         duration = performance.now() - start
         data = await res.blob()
+        let a = performance.now() - (duration+start)
+        console.log('a:'+a)
         dataLengh += data.size
+        console.log('duration: '+duration)
+        console.log('datalen: '+dataLengh)
         if(duration >  13000 ){
             break;
         }

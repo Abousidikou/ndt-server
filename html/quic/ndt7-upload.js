@@ -2,11 +2,10 @@
 onmessage = function(ev){
     postMessage("In up new Worker()")
     var duration;
-    var initialMessageSize = Math.pow(2, 20)
+    var initialMessageSize = Math.pow(2, 24)
     var dat = genData(initialMessageSize)
     let start = performance.now()
-    test(dat,start)
-    
+    test(dat,start) 
 }
 
 
@@ -15,6 +14,7 @@ async function test(dat,start){
         while (true){    
         let response = await fetch("https://monitor.uac.bj:4448/upload",{method: 'post', body: dat});
         v = performance.now() - start
+        console.log('duration: '+v)
         let data = await response.text()
         console.log(data)
         if (v > 13000){

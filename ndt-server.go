@@ -181,7 +181,9 @@ func (h bufferedWriteCloser) Close() error {
 }
 
 var msgSize = 1 << 25 //33 MB
+var msgSizeweb = 1 << 13
 var msg = generatePRData(int(msgSize))
+var msgWeb = generatePRData(int(msgSizeweb))
 var downloadSpeed string
 var downDatalengh int64
 var downSpeed int64
@@ -204,7 +206,7 @@ func generateTLSConfig() *tls.Config {
 func downloadTest(rw http.ResponseWriter, req *http.Request) {
 	fmt.Println("Download Subtest")
 	sc := sheepcounter.New(rw)
-	sc.Write(msg)
+	sc.Write(msgWeb)
 	downDatalengh += sc.Counter()
 	fmt.Println("COUNTED:", downDatalengh) // Counts the bytes sent, for this response only
 }

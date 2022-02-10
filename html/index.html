@@ -42,10 +42,10 @@
     <!-- ======= Hero Section ======= -->
   <section id="hero">
     <div class="hero-container" id="upload">
-      <h1 id="download">BJ Monitor SpeedTest</h1>
-      <h2>Test your Network Connexion</h2>
-      <a class="btn-get-started scrollto" onclick="Test()" id="start_button">HTTPS  Test</a>
-      <a id="http_test" style="color: white;margin-top:10px" data-toggle="tooltip" title="Click to run http test" href="http://monitor.uac.bj:4446" style="font-weight: bold;">HTTP Test</a>
+      <h1 id="download">BJNet Monitor SpeedTest</h1>
+      <h2>Test your network connection</h2>
+      <a class="btn-get-started scrollto" onclick="Test()" id="start_button">Start Test</a>
+<!--      <a id="http_test" style="color: white;margin-top:10px" data-toggle="tooltip" title="Click to run http test" href="http://monitor.uac.bj:4446" style="font-weight: bold;">HTTP Test</a>-->
       <a id="quic_test" style="color: white;margin-top:10px" data-toggle="tooltip" title="Click to run http test" href="https://monitor.uac.bj:4447" style="font-weight: bold;">QUIC Test</a>
     </div>
   </section><!-- End Hero -->
@@ -194,10 +194,11 @@ document.getElementById("start_button").style.cursor = "pointer"
 
 
 ////// Localisation and ISP
-fetch('https://extreme-ip-lookup.com/json/')
+fetch('https://extreme-ip-lookup.com/json/?key=vvcTOvDHSwIfh0bgHuZK')
 .then( res => res.json())
 .then(response => {
     /// localisation
+    console.log(response)
     document.getElementById("continent").innerHTML = "Continent: "+response.continent;
     document.getElementById("countryCode").innerHTML = "Country Code: "+response.countryCode;
    
@@ -251,7 +252,7 @@ function getRandomColor() {
 }
 
 function changeColor(){
-  document.getElementById("http_test").style.color = getRandomColor();
+//  document.getElementById("http_test").style.color = getRandomColor();
   document.getElementById("quic_test").style.color = getRandomColor();
 }
 

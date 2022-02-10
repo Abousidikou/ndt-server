@@ -33,7 +33,7 @@ const ndt7core = (function() {
         console.log('SetTimeout terminate worker')
         worker.terminate()
         finish()
-      }, 15000)
+      }, 30000)
       worker.postMessage({
         href: baseURL,
       })
