@@ -325,7 +325,7 @@ func main() {
 			mon = strconv.Itoa(int(m.Month()))
 		}
 		quicD := QuicData{
-			Date: m.String(),
+			Date: m.String()[:11],
 			Down: downloadSpeed,
 			Up:   uploadSpeed,
 		}
