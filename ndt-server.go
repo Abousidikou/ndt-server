@@ -170,9 +170,9 @@ type Size interface {
 }
 
 type QuicData struct {
-	date string `json:"date"`
-	down string `json:"down"`
-	up   string `json:up`
+	Date string `json:"Date"`
+	Down string `json:"Down"`
+	Up   string `json:"Up"`
 }
 
 // Generate data Byte from interger(lengh)
@@ -324,7 +324,11 @@ func main() {
 		} else {
 			mon = strconv.Itoa(int(m.Month()))
 		}
-		quicD := &QuicData{m.String()[:11], downloadSpeed, uploadSpeed}
+		quicD := QuicData{
+			Date: m.String(),
+			Down: downloadSpeed,
+			Up:   uploadSpeed,
+		}
 		fmt.Println("Struct: ", quicD)
 		file, errJson := json.Marshal(quicD)
 		if errJson != nil {
