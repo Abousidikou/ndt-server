@@ -5,10 +5,12 @@ import (
 	"bytes"
 	"context"
 	"crypto/tls"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
@@ -31,6 +33,7 @@ import (
 	"github.com/m-lab/ndt-server/ndt5/plain"
 	"github.com/m-lab/ndt-server/ndt7/handler"
 	"github.com/m-lab/ndt-server/ndt7/listener"
+
 	//"github.com/m-lab/ndt-server/ndt7/results"
 	"github.com/m-lab/ndt-server/ndt7/spec"
 	"github.com/m-lab/ndt-server/platformx"
@@ -144,9 +147,32 @@ func httpServer(addr string, handler http.Handler) *http.Server {
 
 /*********************** My Functions ********************************/
 
+var msgSize = 1 << 25 //33 MB
+var msgSizeweb = 1 << 13
+var msg = generatePRData(int(msgSize))
+var msgWeb = generatePRData(int(msgSizeweb))
+var downloadSpeed string
+var uploadSpeed string
+var downDatalengh int64
+var downSpeed int64
+var durationDown int64
+var numberStream int
+var dataSize int
+
+const ratio = 1048576
+
+var upDatalengh int
+var upSpeed int64
+
 // Size is needed by the /demo/upload handler to determine the size of the uploaded file
 type Size interface {
 	Size() int64
+}
+
+type QuicData struct {
+	date string `json:"date"`
+	down string `json:"down"`
+	up   string `json:up`
 }
 
 // Generate data Byte from interger(lengh)
@@ -180,17 +206,6 @@ func (h bufferedWriteCloser) Close() error {
 	return h.Closer.Close()
 }
 
-var msgSize = 1 << 25 //33 MB
-var msgSizeweb = 1 << 13
-var msg = generatePRData(int(msgSize))
-var msgWeb = generatePRData(int(msgSizeweb))
-var downloadSpeed string
-var downDatalengh int64
-var downSpeed int64
-var durationDown int64
-
-const ratio = 1048576
-
 // Setup a bare-bones TLS config for the server
 func generateTLSConfig() *tls.Config {
 	tlsCert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
@@ -221,9 +236,6 @@ func getDownSpeed(rw http.ResponseWriter, req *http.Request) {
 	fmt.Println(downDatalengh, downSpeed, int64(durationDown))
 	downDatalengh = 0
 }
-
-var upDatalengh int
-var upSpeed int64
 
 func uploadTest(rw http.ResponseWriter, req *http.Request) {
 	body := &bytes.Buffer{}
@@ -297,10 +309,40 @@ func main() {
 
 	// The ndt7 listener serving up NDT7 tests, likely on standard ports.
 	ndt7Mux := http.NewServeMux()
-	ndt7Mux.HandleFunc("/downloadStat", func(w http.ResponseWriter, r *http.Request) {
-		tmp := downloadSpeed
-		downloadSpeed = ""
-		fmt.Fprintf(w, tmp)
+	ndt7Mux.HandleFunc("/params", func(w http.ResponseWriter, r *http.Request) {
+		numberStream, _ = strconv.Atoi(r.FormValue("nStream"))
+		dataSize, _ = strconv.Atoi(r.FormValue("dataSize"))
+		fmt.Fprintf(w, "Paramaters Received")
+	})
+	ndt7Mux.HandleFunc("/testFinished", func(w http.ResponseWriter, r *http.Request) {
+		downloadSpeed = r.FormValue("down")
+		m := time.Now()
+		fmt.Println(m.Year(), int(m.Month()), m.Day())
+		mon := ""
+		if int(m.Month())+1 < 10 {
+			mon = "0" + strconv.Itoa(int(m.Month()))
+		} else {
+			mon = strconv.Itoa(int(m.Month()))
+		}
+		quicD := &QuicData{m.String()[:11], downloadSpeed, uploadSpeed}
+		fmt.Println("Struct: ", quicD)
+		file, errJson := json.Marshal(quicD)
+		if errJson != nil {
+			fmt.Println(errJson)
+		}
+		fmt.Println("File:", string(file))
+		err := os.MkdirAll("datadir/quic/"+strconv.Itoa(m.Year())+"/"+mon+"/"+strconv.Itoa(m.Day()), 0777)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fi := fmt.Sprintf("datadir/quic/"+strconv.Itoa(m.Year())+"/"+mon+"/"+strconv.Itoa(m.Day())+"/quicTest_%s.json", m.String())
+		fmt.Println("Filename: ", fi)
+		errW := ioutil.WriteFile(fi, file, 0777)
+		if errW != nil {
+			fmt.Println(errW)
+			return
+		}
+		fmt.Fprintf(w, uploadSpeed)
 	})
 	ndt7Mux.Handle("/", http.FileServer(http.Dir(*htmlDir)))
 	ndt7Handler := &handler.Handler{
@@ -354,12 +396,11 @@ func main() {
 	wg.Add(2)
 
 	//goroutine serving on 4447
-	ndt7MuxTCPQuic := http.NewServeMux()
+	//ndt7MuxTCPQuic := http.NewServeMux()
 	fmt.Println("About to setup QUIC")
-	ndt7MuxTCPQuic.Handle("/", http.FileServer(http.Dir(*htmlDir+"/stat")))
+	//ndt7MuxTCPQuic.Handle("/", http.FileServer(http.Dir(*htmlDir+"/stat")))
 	fmt.Println("About to listening on TCP AND QUIC :4447")
 	go func() {
-		fmt.Println("QUIC Testing...")
 		quicC := &quic.Config{
 			//MaxIdleTimeout: 60 * time.Second,
 		}
@@ -368,7 +409,16 @@ func main() {
 		fmt.Println("Setting qlogs...")
 		quicC.Tracer = qlog.NewTracer(func(_ logquic.Perspective, connID []byte) io.WriteCloser {
 			//fmt.Println(connID)
-			filename := fmt.Sprintf("datadir/server_%s.qlog", time.Now().String())
+			m := time.Now()
+			fmt.Println(m.Year(), int(m.Month()), m.Day())
+			mon := ""
+			if int(m.Month())+1 < 10 {
+				mon = "0" + strconv.Itoa(int(m.Month()))
+			} else {
+				mon = strconv.Itoa(int(m.Month()))
+			}
+			os.MkdirAll("datadir/qlogs/"+strconv.Itoa(m.Year())+"/"+mon+"/"+strconv.Itoa(m.Day()), 0777)
+			filename := fmt.Sprintf("datadir/qlogs/"+strconv.Itoa(m.Year())+"/"+mon+"/"+strconv.Itoa(m.Day())+"/server_%s.qlog", time.Now().String())
 			fmt.Println("Filename: ", filename)
 			f, err := os.Create(filename)
 			if err != nil {
@@ -399,34 +449,77 @@ func main() {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				//fmt.Println("Waiting for next stream. open by peer..")
-				stream, err := sess.AcceptStream(context.Background())
-				if err != nil {
-					fmt.Println("Stream creating error: ", err)
-					return
+				fmt.Println("Upload Testing...")
+				var total int
+				var w sync.WaitGroup
+				var mu sync.Mutex
+				var times []time.Duration
+				for i := 0; i < numberStream; i++ {
+					fmt.Println(i)
+					fmt.Println("Waiting for next stream. open by peer..")
+					streamUp, err := sess.AcceptStream(context.Background())
+					if err != nil {
+						fmt.Println(" Stream created error: ", err)
+						return
+					}
+					// each go routine for each stream
+					w.Add(1)
+					go func(streamUp quic.Stream) {
+						defer w.Done()
+						streamUp.SetReadDeadline(time.Now().Add(13 * time.Second))
+						t1 := time.Now()
+						//bytesReceived, err := io.Copy(&buf, stream) //loggingWriter{stream}
+						buff := make([]byte, dataSize)
+						byter, _ := io.ReadFull(streamUp, buff)
+						d_temp := time.Since(t1)
+						fmt.Println("Bytes reveived :" + strconv.Itoa(byter))
+						mu.Lock()
+						times = append(times, d_temp)
+						total += byter
+						mu.Unlock()
+					}(streamUp)
+					fmt.Println("Go fun lauched with i=", i)
 				}
-				//fmt.Println("Stream Accepted with ID: ", stream.StreamID())
+				w.Wait()
+				t := times[0]
+				for ind := range times {
+					if t < times[ind] {
+						t = times[ind]
+					}
+				}
+				fmt.Println("Bytes Received: ", total)
+				fmt.Println("Time for receiving", t.Microseconds())
+				bps := float64(total*8) / t.Seconds()
+				Mbps := float64(bps / ratio)
+				uploadSpeed = fmt.Sprintf("%.3f", Mbps)
+				fmt.Printf("Upload Speed: %.3f Mbps\n", Mbps)
 
 				fmt.Println("Download Testing...")
-				stream.SetReadDeadline(time.Now().Add(13 * time.Second))
-				t1 := time.Now()
-				//bytesReceived, err := io.Copy(&buf, stream) //loggingWriter{stream}
-				buf := make([]byte, len(msg))
-				bytesReceived, _ := io.ReadFull(stream, buf)
-				d_temp := time.Since(t1)
-				fmt.Println("Bytes Received: ", bytesReceived)
-				fmt.Println("Time for receiving", d_temp.Microseconds())
-				bps := float64(bytesReceived*8) / d_temp.Seconds()
-				Mbps := float64(bps / ratio)
-				downloadSpeed = fmt.Sprintf("%.3f", Mbps)
-				fmt.Printf("Download Speed: %.3f Mbps", Mbps)
-				fmt.Println("")
+				var bytesSents int
+				msg := generatePRData(dataSize)
+				for i := 0; i < numberStream; i++ {
+					fmt.Println(i)
+					streamDown, err := sess.OpenStreamSync(context.Background())
+					if err != nil {
+						fmt.Println(" Stream created: ", err)
+						return
+					}
+					defer streamDown.Close()
+					fmt.Println("Stream Accepted with ID: ", streamDown.StreamID())
+					w.Add(1)
+					go func() {
+						defer w.Done()
+						streamDown.SetWriteDeadline(time.Now().Add(13 * time.Second))
+						bytesSent, _ := streamDown.Write(msg)
+						fmt.Println("Byte sent:", bytesSent)
+						bytesSents += bytesSent
+					}()
+					fmt.Println("Go func lauched i=", i)
+				}
+				w.Wait()
 
-				fmt.Println("Upload Testing...")
-				stream.SetWriteDeadline(time.Now().Add(13 * time.Second))
-				bytesSent, _ := stream.Write(msg)
-				fmt.Println("Bytes sent:", bytesSent)
-				fmt.Println("")
+				// sending download stat
+				fmt.Println("Bytes Sents: ", bytesSents)
 
 				// sending download stat
 				/*d_stat, err := sess.OpenStreamSync(context.Background())

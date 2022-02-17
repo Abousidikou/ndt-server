@@ -9,3 +9,4 @@ cp $2/privkey.pem $3
 
 chown $1:$1 $3/fullchain.pem
 chown $1:$1 $3/privkey.pem
+
