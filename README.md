@@ -92,24 +92,19 @@ Run the `ndt-server` binary container and
 replace <ip> by your public or local ip
 ```bash
 docker run  --network=host                       \
-           --volume `pwd`/certs:/certs        \
-           --volume `pwd`/datadir:/datadir       \
-           --volume `pwd`/html:/html             \
-           --name ndt_service             \
-           sidikhub/ndt-server:quic1.0              \
-           -cert /certs/fullchain.pem            \
-           -key /certs/privkey.pem               \
-           -datadir /datadir                     \
-           -ndt7_addr ip:4444         \
-<<<<<<< HEAD
-           -ndt7_addr_cleartext ip:4446  \
-           -quiccmdAddr 196.192.16.70:4447      \
-           -quicwebAddr 196.192.16.70:4448
-=======
-           -ndt7_addr_cleartext ip:4446 \
-           -quiccmdAddr ip:4447        \
-           -quicwebAddr ip:4448
->>>>>>> ad8dcac2078e026521eb26e8a301d0c134f82520
+            --volume `pwd`/certs:/certs        \
+            --volume `pwd`/datadir:/datadir       \
+            --volume `pwd`/html:/html             \
+            --name ndt_service             \
+            sidikhub/ndt-server:quic1.0              \
+            -cert /certs/fullchain.pem            \
+            -key /certs/privkey.pem               \
+            -datadir /datadir                     \
+            -ndt7_addr ip:4444         \
+            -ndt7_addr_cleartext ip:4446 \
+            -quiccmdAddr ip:4447        \
+            -quicwebAddr ip:4448
+
 ```
        
         
