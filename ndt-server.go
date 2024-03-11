@@ -614,7 +614,7 @@ func main() {
 	// QUIC Server
 	fmt.Println("About to listening on QUIC :4448")
 	go func() {
-		log.Fatal(http3.ListenAndServe(*quicwebAddr, *certFile, *keyFile, ndt7MuxQuic))
+		//log.Fatal(http3.ListenAndServe(*quicwebAddr, *certFile, *keyFile, ndt7MuxQuic))
 		// QUIC COnfig setup
 		/*fmt.Println("QuicConfig setup...")
 		quicConf := &quic.Config{}
